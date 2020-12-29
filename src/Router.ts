@@ -29,7 +29,7 @@ import {
   ShortHandRoute,
 } from "./constants";
 import Node from "./Node";
-import { prettyPrint, routes } from "./utils";
+import { assignMatchAllNode, prettyPrint, routes } from "./utils";
 
 interface Router<
   Request extends RequestT = RequestT,
@@ -105,6 +105,7 @@ class Router<
     path: string,
     params: Record<string, unknown> = {},
   ): Partial<HandlersResultT<Request, Response>> {
+    const originalPath = path;
     let node: Node<Request, Response> | undefined = this.tree;
 
     if (path[0] === "/") {
@@ -140,13 +141,15 @@ class Router<
             return node.findHandlers(method);
           }
 
-          node = currentNode.findChildByLabel(":");
+          const paramNode = currentNode.findChildByLabel(":");
 
-          if (node === undefined) {
-            node = currentNode.findChildByLabel("*");
+          if (paramNode === undefined) {
+            node = node.matchingWildcardNode;
 
             continue;
           }
+
+          node = paramNode;
         }
         case NODE.PARAM: {
           const { childrenCount, param } = node;
@@ -170,14 +173,14 @@ class Router<
             continue;
           }
 
-          node = currentNode.findChildByLabel("*");
+          node = node.matchingWildcardNode;
 
           if (node === undefined) return EMPTY_RESULT;
         }
         case NODE.MATCH_ALL: {
-          const { param } = node;
+          const { param, matchAllParamRegExp } = node;
 
-          params[param!] = path;
+          params[param!] = originalPath.match(matchAllParamRegExp!)![1];
 
           return node.findHandlers(method);
         }
@@ -286,22 +289,41 @@ class Router<
 
     path = `${routerPrefix}${path}`.replace(/\/{2,}/g, "/");
 
+    const originalPath = path;
+
     if (path[0] === "/") path = path.slice(1);
 
     const params: string[] = [];
 
     let node: Node<Request, Response> | undefined = this.tree;
 
-    let currentNode: Node<Request, Response>;
+    let currentNode: Node<Request, Response> = node;
+    let matchAllNode: Node<Request, Response> | undefined;
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
+      matchAllNode = currentNode.findChildByLabel("*") || matchAllNode;
+
       if (path.length === 0) {
         for (const param of params) {
           const paramHandler = paramHandlers[param];
 
           if (paramHandler !== undefined)
             handlers = [paramHandler, ...handlers];
+        }
+
+        if (node.type === NODE.MATCH_ALL) {
+          if (node.matchAllParamRegExp === undefined) {
+            node.matchAllParamRegExp = new RegExp(
+              `^${originalPath
+                .replace(/(:[^/]+)/g, "[^/]+")
+                .replace(/\*.*/, "(.*)")}$`,
+            );
+          }
+
+          assignMatchAllNode(currentNode, node);
+        } else {
+          node.matchingWildcardNode = matchAllNode;
         }
 
         node.addHandlers(

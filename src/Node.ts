@@ -1,9 +1,9 @@
 import {
+  HandlersResultT,
   HandlerT,
   MethodT,
   NODE,
   NodeChildrenT,
-  HandlersResultT,
   NodeHandlersT,
   RequestT,
   ResponseT,
@@ -29,6 +29,10 @@ class Node<
   public allowHeader = "";
 
   public childrenCount = 0;
+
+  public matchingWildcardNode?: Node<Request, Response>;
+
+  public matchAllParamRegExp?: RegExp;
 
   public param?: string;
 

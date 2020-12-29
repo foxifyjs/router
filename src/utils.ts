@@ -2,6 +2,29 @@ import type { Request as RequestT, Response as ResponseT } from "@foxify/http";
 import { METHODS, RoutesT } from "./constants";
 import Node from "./Node";
 
+export function assignMatchAllNode<
+  Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT
+>(
+  node: Node<Request, Response>,
+  matchAllNode?: Node<Request, Response>,
+  check = false,
+): void {
+  const { children, childrenCount } = node;
+
+  const labels = Object.keys(children);
+
+  if (check && labels.indexOf("*") !== -1) return;
+
+  for (let i = 0; i < childrenCount; i++) {
+    const child = children[labels[i]]!;
+
+    child.matchingWildcardNode = matchAllNode;
+
+    assignMatchAllNode(child, matchAllNode, true);
+  }
+}
+
 export function routes<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
@@ -16,7 +39,7 @@ export function routes<
     result.push([method, path, handlers[method]!]);
   }
 
-  const labels = Object.keys(children).sort();
+  const labels = Object.keys(children);
 
   for (let i = 0; i < childrenCount; i++) {
     result = result.concat(routes(children[labels[i]]!, path));

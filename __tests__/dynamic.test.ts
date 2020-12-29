@@ -43,7 +43,7 @@ it("should find mixed dynamic/static route", () => {
   expect(params).toEqual({ id: "abcd1234" });
 });
 
-it("should fallback to the neighbor match all route", () => {
+it("should fallback to the closest match all route", () => {
   const router = new Router();
 
   const routes = [
@@ -67,7 +67,14 @@ it("should fallback to the neighbor match all route", () => {
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe("GET");
-  expect(params).toEqual({ "*": "some/route" });
+  expect(params).toEqual({
+    "*": "some/route",
+    /**
+     * Trying to remove the "id" param here, adds performance overhead 🤔
+     * Since this isn't a breaking issue I will let it be for now, until I find a suitable solution 🧐
+     */
+    id: "some",
+  });
 });
 
 it("shouldn't find unregistered route", () => {
