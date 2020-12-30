@@ -1,7 +1,11 @@
 import {
   HttpError,
   MethodNotAllowed,
+  METHODS,
+  MethodT,
   NotFound,
+  Request as RequestT,
+  Response as ResponseT,
   STATUS,
   StatusT,
 } from "@foxify/http";
@@ -16,17 +20,13 @@ import {
   HandlersResultT,
   HandlersT,
   HandlerT,
-  METHODS,
-  MethodT,
   MiddlewaresT,
   NextT,
   NODE,
   ParamHandlerI,
-  RequestT,
-  ResponseT,
   RouteMethodsT,
   RoutesT,
-  ShortHandRoute,
+  ShortHandRouteT,
 } from "./constants";
 import Node from "./Node";
 import {
@@ -40,41 +40,41 @@ interface Router<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
 > {
-  acl: ShortHandRoute<Request, Response, this>;
-  bind: ShortHandRoute<Request, Response, this>;
-  checkout: ShortHandRoute<Request, Response, this>;
-  connect: ShortHandRoute<Request, Response, this>;
-  copy: ShortHandRoute<Request, Response, this>;
-  delete: ShortHandRoute<Request, Response, this>;
-  get: ShortHandRoute<Request, Response, this>;
-  head: ShortHandRoute<Request, Response, this>;
-  link: ShortHandRoute<Request, Response, this>;
-  lock: ShortHandRoute<Request, Response, this>;
-  "m-search": ShortHandRoute<Request, Response, this>;
-  merge: ShortHandRoute<Request, Response, this>;
-  mkactivity: ShortHandRoute<Request, Response, this>;
-  mkcalendar: ShortHandRoute<Request, Response, this>;
-  mkcol: ShortHandRoute<Request, Response, this>;
-  move: ShortHandRoute<Request, Response, this>;
-  notify: ShortHandRoute<Request, Response, this>;
-  options: ShortHandRoute<Request, Response, this>;
-  patch: ShortHandRoute<Request, Response, this>;
-  post: ShortHandRoute<Request, Response, this>;
-  pri: ShortHandRoute<Request, Response, this>;
-  propfind: ShortHandRoute<Request, Response, this>;
-  proppatch: ShortHandRoute<Request, Response, this>;
-  purge: ShortHandRoute<Request, Response, this>;
-  put: ShortHandRoute<Request, Response, this>;
-  rebind: ShortHandRoute<Request, Response, this>;
-  report: ShortHandRoute<Request, Response, this>;
-  search: ShortHandRoute<Request, Response, this>;
-  source: ShortHandRoute<Request, Response, this>;
-  subscribe: ShortHandRoute<Request, Response, this>;
-  trace: ShortHandRoute<Request, Response, this>;
-  unbind: ShortHandRoute<Request, Response, this>;
-  unlink: ShortHandRoute<Request, Response, this>;
-  unlock: ShortHandRoute<Request, Response, this>;
-  unsubscribe: ShortHandRoute<Request, Response, this>;
+  acl: ShortHandRouteT<Request, Response, this>;
+  bind: ShortHandRouteT<Request, Response, this>;
+  checkout: ShortHandRouteT<Request, Response, this>;
+  connect: ShortHandRouteT<Request, Response, this>;
+  copy: ShortHandRouteT<Request, Response, this>;
+  delete: ShortHandRouteT<Request, Response, this>;
+  get: ShortHandRouteT<Request, Response, this>;
+  head: ShortHandRouteT<Request, Response, this>;
+  link: ShortHandRouteT<Request, Response, this>;
+  lock: ShortHandRouteT<Request, Response, this>;
+  "m-search": ShortHandRouteT<Request, Response, this>;
+  merge: ShortHandRouteT<Request, Response, this>;
+  mkactivity: ShortHandRouteT<Request, Response, this>;
+  mkcalendar: ShortHandRouteT<Request, Response, this>;
+  mkcol: ShortHandRouteT<Request, Response, this>;
+  move: ShortHandRouteT<Request, Response, this>;
+  notify: ShortHandRouteT<Request, Response, this>;
+  options: ShortHandRouteT<Request, Response, this>;
+  patch: ShortHandRouteT<Request, Response, this>;
+  post: ShortHandRouteT<Request, Response, this>;
+  pri: ShortHandRouteT<Request, Response, this>;
+  propfind: ShortHandRouteT<Request, Response, this>;
+  proppatch: ShortHandRouteT<Request, Response, this>;
+  purge: ShortHandRouteT<Request, Response, this>;
+  put: ShortHandRouteT<Request, Response, this>;
+  rebind: ShortHandRouteT<Request, Response, this>;
+  report: ShortHandRouteT<Request, Response, this>;
+  search: ShortHandRouteT<Request, Response, this>;
+  source: ShortHandRouteT<Request, Response, this>;
+  subscribe: ShortHandRouteT<Request, Response, this>;
+  trace: ShortHandRouteT<Request, Response, this>;
+  unbind: ShortHandRouteT<Request, Response, this>;
+  unlink: ShortHandRouteT<Request, Response, this>;
+  unlock: ShortHandRouteT<Request, Response, this>;
+  unsubscribe: ShortHandRouteT<Request, Response, this>;
 }
 
 class Router<
@@ -96,7 +96,13 @@ class Router<
 
     const { handlers = [], allowHeader = "" } = this.find(method, path, params);
 
-    const next = this.generateNext(request, response, allowHeader, handlers);
+    const next = this.generateNext(
+      request,
+      response,
+      method,
+      allowHeader,
+      handlers,
+    );
 
     response.next = next;
 
@@ -439,6 +445,7 @@ class Router<
   protected generateNext(
     req: Request,
     res: Response,
+    method: MethodT,
     allowHeader: string,
     handlers: HandlerT<Request, Response>[] = [],
   ): NextT {
@@ -449,7 +456,7 @@ class Router<
       if (error) return this.throw(error, req, res);
 
       if (index === length) {
-        if (allowHeader.length > 0) {
+        if (allowHeader.length > 0 && allowHeader.indexOf(method) === -1) {
           return this.throw(new MethodNotAllowed(), req, res);
         }
 
@@ -493,7 +500,7 @@ class Router<
       if (err) return this.defaultCatch(err, req, res);
 
       if (index === length) {
-        return this.defaultCatch(new Error(), req, res);
+        return this.defaultCatch(error, req, res);
       }
 
       try {
@@ -520,7 +527,7 @@ class Router<
     }
 
     const {
-      message = STATUS_CODES[STATUS.INTERNAL_SERVER_ERROR],
+      message = STATUS_CODES[STATUS.INTERNAL_SERVER_ERROR]!,
       stack,
     } = error;
 

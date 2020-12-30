@@ -6,11 +6,13 @@ import type {
 import type NodeT from "./Node";
 import type RouterT from "./Router";
 
-export { METHOD, METHODS } from "@foxify/http";
-
 export const EMPTY_RESULT = {};
 
-export type { RequestT, ResponseT, MethodT };
+export const enum NODE {
+  STATIC,
+  PARAM,
+  MATCH_ALL,
+}
 
 export type NextT = (error?: Error) => void;
 
@@ -75,12 +77,6 @@ export type ErrorHandlersT<
   | ErrorHandlersT<Request, Response>
 >;
 
-export const enum NODE {
-  STATIC,
-  PARAM,
-  MATCH_ALL,
-}
-
 export type HandlersResultT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
@@ -103,30 +99,26 @@ export type NodeChildrenT<
   [Label in string]?: NodeT<Request, Response>;
 };
 
-export interface ShortHandRoute<
+export type ShortHandRouteT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT,
   Router extends RouterT<Request, Response> = RouterT<Request, Response>
-> {
-  (path: string, ...handlers: HandlersT<Request, Response>): Router;
-}
+> = (path: string, ...handlers: HandlersT<Request, Response>) => Router;
 
-export interface RouteMethod<
+export type RouteMethodT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT,
   This extends RouteMethodsT<Request, Response> = RouteMethodsT<
     Request,
     Response
   >
-> {
-  (...handlers: HandlersT<Request, Response>): This;
-}
+> = (...handlers: HandlersT<Request, Response>) => This;
 
 export type RouteMethodsT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
 > = {
-  [method in Lowercase<MethodT>]: RouteMethod<
+  [method in Lowercase<MethodT>]: RouteMethodT<
     Request,
     Response,
     RouteMethodsT<Request, Response>

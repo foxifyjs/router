@@ -1,5 +1,9 @@
-import type { Request as RequestT, Response as ResponseT } from "@foxify/http";
-import { METHODS, RoutesT } from "./constants";
+import {
+  METHODS,
+  Request as RequestT,
+  Response as ResponseT,
+} from "@foxify/http";
+import { RoutesT } from "./constants";
 import Node from "./Node";
 
 export function assignMatchAllNode<

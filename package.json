@@ -16,7 +16,14 @@
     "email": "ardalanamini22@gmail.com",
     "url": "https://ardalanamini.com"
   },
-  "keywords": [],
+  "keywords": [
+    "foxify",
+    "router",
+    "nodejs",
+    "http",
+    "request",
+    "response"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -34,10 +41,11 @@
   },
   "devDependencies": {
     "@foxify/http": "^1.0.0-beta.2",
+    "@foxify/inject": "^1.1.0",
     "@types/escape-html": "^1.0.0",
-    "@typescript-eslint/eslint-plugin": "^4.9.1",
-    "@typescript-eslint/parser": "^4.9.1",
-    "eslint": "^7.15.0",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
+    "@typescript-eslint/parser": "^4.11.1",
+    "eslint": "^7.16.0",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
     "prototyped.js": "^1.0.1",

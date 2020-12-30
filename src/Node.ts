@@ -1,12 +1,14 @@
 import {
+  MethodT,
+  Request as RequestT,
+  Response as ResponseT,
+} from "@foxify/http";
+import {
   HandlersResultT,
   HandlerT,
-  MethodT,
   NODE,
   NodeChildrenT,
   NodeHandlersT,
-  RequestT,
-  ResponseT,
 } from "./constants";
 
 interface Node<
