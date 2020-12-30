@@ -1,5 +1,5 @@
-import Router from "../src";
 import { MethodT } from "@foxify/http";
+import Router from "../src";
 
 it("should find dynamic route", () => {
   const router = new Router();
@@ -18,6 +18,80 @@ it("should find dynamic route", () => {
   );
 
   expect(handlers).toEqual([handler]);
+  expect(allowHeader).toBe(method);
+  expect(params).toEqual({ username: "ardalan" });
+});
+
+it("should add multiple method handlers to the same dynamic route", () => {
+  const router = new Router();
+
+  const postHandler = jest.fn();
+  const getHandler = jest.fn();
+
+  router
+    .post("/user/lookup/username/:username", postHandler)
+    .get("/user/lookup/username/:username", getHandler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(
+    "GET",
+    "/user/lookup/username/ardalan",
+    params,
+  );
+
+  expect(handlers).toEqual([getHandler]);
+  expect(allowHeader).toBe("GET, POST");
+  expect(params).toEqual({ username: "ardalan" });
+});
+
+it("shouldn't allow multiple names for the same parameter", () => {
+  const router = new Router();
+
+  const handler = jest.fn();
+
+  expect(() =>
+    router
+      .post("/user/lookup/username/:username", handler)
+      .get("/user/lookup/username/:notUsername", handler),
+  ).toThrow("Can't assign multiple names to the same parameter");
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(
+    "GET",
+    "/user/lookup/username/ardalan",
+    params,
+  );
+
+  expect(handlers).toBeUndefined();
+  expect(allowHeader).toBe("POST");
+  expect(params).toEqual({ username: "ardalan" });
+});
+
+it("should find dynamic route with the param handler", () => {
+  const router = new Router();
+
+  const method = "GET";
+  const paramHandler = jest.fn();
+  const dummyParamHandler = jest.fn();
+  const handler = jest.fn();
+
+  router.param("username", paramHandler);
+
+  router.param("dummy", dummyParamHandler);
+
+  router.on(method, "/user/lookup/username/:username", handler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(
+    method,
+    "/user/lookup/username/ardalan",
+    params,
+  );
+
+  expect(handlers).toEqual([paramHandler, handler]);
   expect(allowHeader).toBe(method);
   expect(params).toEqual({ username: "ardalan" });
 });

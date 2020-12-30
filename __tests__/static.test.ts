@@ -1,5 +1,5 @@
+import { METHODS, MethodT } from "@foxify/http";
 import Router from "../src";
-import type { MethodT } from "@foxify/http";
 
 it("should find index route", () => {
   const router = new Router();
@@ -16,6 +16,60 @@ it("should find index route", () => {
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
+  expect(params).toEqual({});
+});
+
+it("should register routes via method aliases", () => {
+  const router = new Router();
+
+  const method = "GET";
+  const path = "/";
+  const handler = jest.fn();
+
+  router.get(path, handler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(method, path, params);
+
+  expect(handlers).toEqual([handler]);
+  expect(allowHeader).toBe(method);
+  expect(params).toEqual({});
+});
+
+it("should register route with all http methods", () => {
+  const router = new Router();
+
+  const method = "GET";
+  const path = "/";
+  const handler = jest.fn();
+
+  router.all(path, handler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(method, path, params);
+
+  expect(handlers).toEqual([handler]);
+  expect(allowHeader).toBe(METHODS.join(", "));
+  expect(params).toEqual({});
+});
+
+it("should add multiple method handlers to registered route", () => {
+  const router = new Router();
+
+  const method = "GET";
+  const path = "/";
+  const handler = jest.fn();
+
+  router.route(path).get(handler).post(handler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(method, path, params);
+
+  expect(handlers).toEqual([handler]);
+  expect(allowHeader).toBe("GET, POST");
   expect(params).toEqual({});
 });
 
@@ -161,6 +215,27 @@ it("shouldn't find unregistered route", () => {
   const handler = jest.fn();
 
   router.on(method, path, handler);
+
+  const params = {};
+
+  const { handlers, allowHeader } = router.find(
+    method,
+    "/some/other/route",
+    params,
+  );
+
+  expect(handlers).toBeUndefined();
+  expect(allowHeader).toBeUndefined();
+  expect(params).toEqual({});
+});
+
+it("should ignore routes with no handlers registered", () => {
+  const router = new Router();
+
+  const method = "GET";
+  const path = "/some/route";
+
+  router.on(method, path);
 
   const params = {};
 

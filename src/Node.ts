@@ -30,6 +30,8 @@ class Node<
 
   public childrenCount = 0;
 
+  public neighborParamNode?: Node<Request, Response>;
+
   public matchingWildcardNode?: Node<Request, Response>;
 
   public matchAllParamRegExp?: RegExp;

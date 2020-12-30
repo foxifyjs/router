@@ -29,7 +29,12 @@ import {
   ShortHandRoute,
 } from "./constants";
 import Node from "./Node";
-import { assignMatchAllNode, prettyPrint, routes } from "./utils";
+import {
+  assignMatchAllNode,
+  assignParamNode,
+  prettyPrint,
+  routes,
+} from "./utils";
 
 interface Router<
   Request extends RequestT = RequestT,
@@ -116,8 +121,7 @@ class Router<
       path = path.slice(1);
     }
 
-    let currentNode = node;
-    node = currentNode.findChild(path);
+    node = node.findChild(path);
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -132,8 +136,7 @@ class Router<
             if (childrenCount > 0 && path.slice(0, prefixLength) === prefix) {
               path = path.slice(prefixLength);
 
-              currentNode = node;
-              node = currentNode.findChild(path);
+              node = node.findChild(path);
 
               continue;
             }
@@ -141,7 +144,7 @@ class Router<
             return node.findHandlers(method);
           }
 
-          const paramNode = currentNode.findChildByLabel(":");
+          const paramNode = node.neighborParamNode;
 
           if (paramNode === undefined) {
             node = node.matchingWildcardNode;
@@ -167,8 +170,7 @@ class Router<
 
             path = path.slice(slashIndex);
 
-            currentNode = node;
-            node = currentNode.findChild(path);
+            node = node.findChild(path);
 
             continue;
           }
@@ -323,6 +325,12 @@ class Router<
 
           assignMatchAllNode(currentNode, node);
         } else {
+          if (node.type === NODE.PARAM) {
+            assignParamNode(currentNode, node);
+          } else {
+            node.neighborParamNode = currentNode.findChildByLabel(":");
+          }
+
           node.matchingWildcardNode = matchAllNode;
         }
 
@@ -580,9 +588,7 @@ class Router<
 for (const method of METHODS) {
   const name = method.toLowerCase() as Lowercase<MethodT>;
 
-  if (name in Router.prototype) {
-    throw new Error(`Method already exists: ${name}`);
-  }
+  assert(!(name in Router.prototype), `Method already exists: ${name}`);
 
   Router.prototype[name] = function (
     this: Router,

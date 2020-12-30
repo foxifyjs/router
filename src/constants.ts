@@ -49,6 +49,7 @@ export type MiddlewaresT<
   | false
   | null
   | undefined
+  | RouterT<Request, Response>
   | HandlerT<Request, Response>
   | HandlersT<Request, Response>
 >;
@@ -70,7 +71,6 @@ export type ErrorHandlersT<
   | false
   | null
   | undefined
-  | RouterT<Request, Response>
   | ErrorHandlerT<Request, Response>
   | ErrorHandlersT<Request, Response>
 >;

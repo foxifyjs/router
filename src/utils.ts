@@ -25,6 +25,21 @@ export function assignMatchAllNode<
   }
 }
 
+export function assignParamNode<
+  Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT
+>(node: Node<Request, Response>, paramNode?: Node<Request, Response>): void {
+  const { children } = node;
+
+  const labels = Object.keys(children).filter((label) => label !== ":");
+
+  for (let i = 0; i < labels.length; i++) {
+    const child = children[labels[i]]!;
+
+    child.neighborParamNode = paramNode;
+  }
+}
+
 export function routes<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
