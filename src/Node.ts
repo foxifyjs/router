@@ -2,13 +2,18 @@ import {
   MethodT,
   Request as RequestT,
   Response as ResponseT,
+  StatusT,
 } from "@foxify/http";
+import fastJson from "fast-json-stringify";
 import {
   HandlersResultT,
   HandlerT,
   NODE,
   NodeChildrenT,
   NodeHandlersT,
+  NodeOptionsT,
+  NodeSchemaOptionsI,
+  OptionsI,
 } from "./constants";
 
 interface Node<
@@ -23,6 +28,8 @@ class Node<
   Response extends ResponseT = ResponseT
 > {
   public readonly handlers: NodeHandlersT<Request, Response> = {};
+
+  public readonly options: NodeOptionsT = {} as never;
 
   public readonly children: NodeChildrenT<Request, Response> = {};
 
@@ -65,17 +72,46 @@ class Node<
 
   public addHandlers(
     method: MethodT,
+    options: OptionsI,
     handlers: HandlerT<Request, Response>[],
   ): this {
     let nodeHandlers = this.handlers[method];
+    let nodeOptions = this.options[method];
 
     if (nodeHandlers === undefined) {
       nodeHandlers = this.handlers[method] = [];
+      nodeOptions = this.options[method] = {} as never;
 
       this.methods.push(method);
       this.methods.sort();
       this.allowHeader = this.methods.join(", ");
     }
+
+    if (options.schema === undefined) options.schema = {};
+    if (options.schema.response === undefined) options.schema.response = {};
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schema = options.schema.response;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options.schema.response = Object.keys(schema).reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (result, status: any) => {
+        const value = schema[status as StatusT]!;
+
+        if (typeof value === "function") {
+          result[status as StatusT] = value;
+        } else {
+          result[status as StatusT] = fastJson(value);
+        }
+
+        return result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      },
+      {} as NodeSchemaOptionsI["response"],
+    );
+
+    this.options[method] = { ...nodeOptions, ...options } as never;
 
     nodeHandlers.push(...handlers);
 
@@ -83,9 +119,13 @@ class Node<
   }
 
   public findHandlers(method: MethodT): HandlersResultT<Request, Response> {
-    const { handlers, allowHeader } = this;
+    const {
+      handlers: { [method]: handlers },
+      allowHeader,
+      options: { [method]: options },
+    } = this;
 
-    return { handlers: handlers[method], allowHeader };
+    return { handlers, allowHeader, options };
   }
 
   public addChild(node: Node<Request, Response>): Node<Request, Response>;

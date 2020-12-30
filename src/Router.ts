@@ -14,6 +14,7 @@ import escapeHtml from "escape-html";
 import { STATUS_CODES } from "http";
 import { compact, deepFlatten } from "prototyped.js/es6/array/methods";
 import {
+  EMPTY_OPTIONS,
   EMPTY_RESULT,
   ErrorHandlersT,
   ErrorHandlerT,
@@ -23,6 +24,7 @@ import {
   MiddlewaresT,
   NextT,
   NODE,
+  OptionsI,
   ParamHandlerI,
   RouteMethodsT,
   RoutesT,
@@ -94,7 +96,13 @@ class Router<
   public lookup(request: Request, response: Response): void {
     const { method, path, params } = request;
 
-    const { handlers = [], allowHeader = "" } = this.find(method, path, params);
+    const {
+      handlers = [],
+      allowHeader = "",
+      options = EMPTY_OPTIONS,
+    } = this.find(method, path, params);
+
+    response.stringify = options.schema.response;
 
     const next = this.generateNext(
       request,
@@ -221,8 +229,8 @@ class Router<
     for (const router of routers) {
       const routes = router.routes();
 
-      for (const [method, path, handlers] of routes) {
-        this.on(method, path, handlers);
+      for (const [method, path, options, handlers] of routes) {
+        this.on(method, path, options, handlers);
       }
     }
 
@@ -248,16 +256,25 @@ class Router<
     return this;
   }
 
-  public all(path: string, ...handlers: HandlersT<Request, Response>): this {
-    return this.on(METHODS, path, handlers);
+  public all(
+    path: string,
+    options?:
+      | OptionsI
+      | HandlersT<Request, Response>
+      | HandlerT<Request, Response>
+      | false
+      | null,
+    ...handlers: HandlersT<Request, Response>
+  ): this {
+    return this.on(METHODS, path, options, handlers);
   }
 
   public route(path: string): RouteMethodsT<Request, Response> {
     const ROUTER = METHODS.reduce((router, method) => {
       const name = method.toLowerCase() as Lowercase<MethodT>;
 
-      router[name] = (...handlers: HandlersT<Request, Response>) => {
-        this.on(method, path, handlers);
+      router[name] = (options, ...handlers) => {
+        this.on(method, path, options, handlers);
 
         return ROUTER;
       };
@@ -269,29 +286,36 @@ class Router<
   }
 
   public on(
-    methods: MethodT[],
-    path: string,
-    ...handlers: HandlersT<Request, Response>
-  ): this;
-  public on(
-    method: MethodT,
-    path: string,
-    ...handlers: HandlersT<Request, Response>
-  ): this;
-  public on(
     method: MethodT | MethodT[],
     path: string,
+    options:
+      | OptionsI
+      | HandlersT<Request, Response>
+      | HandlerT<Request, Response>
+      | false
+      | null
+      | undefined = {},
     ...handlers: HandlersT<Request, Response>
   ): this {
-    if (Array.isArray(method)) {
-      for (const item of method) this.on(item, path, handlers);
-
-      return this;
+    if (
+      options == null ||
+      options === false ||
+      typeof options === "function" ||
+      Array.isArray(options)
+    ) {
+      handlers = [options as HandlerT<Request, Response>, ...handlers];
+      options = {};
     }
 
     handlers = compact(deepFlatten(handlers));
 
     if (handlers.length === 0) return this;
+
+    if (Array.isArray(method)) {
+      for (const item of method) this.on(item, path, options, handlers);
+
+      return this;
+    }
 
     const { prefix: routerPrefix, middlewares, paramHandlers } = this;
 
@@ -342,6 +366,7 @@ class Router<
 
         node.addHandlers(
           method,
+          options,
           middlewares.concat(handlers as HandlerT<Request, Response>[]),
         );
 
@@ -597,12 +622,8 @@ for (const method of METHODS) {
 
   assert(!(name in Router.prototype), `Method already exists: ${name}`);
 
-  Router.prototype[name] = function (
-    this: Router,
-    path: string,
-    ...handlers: HandlersT
-  ) {
-    return this.on(method, path, ...handlers);
+  Router.prototype[name] = function (path, options, ...handlers) {
+    return this.on(method, path, options, ...handlers);
   };
 }
 

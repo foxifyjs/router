@@ -48,14 +48,21 @@ export function routes<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
 >(node: Node<Request, Response>, prefix = ""): RoutesT<Request, Response> {
-  const { prefix: nodePath, children, childrenCount, handlers, methods } = node;
+  const {
+    prefix: nodePath,
+    children,
+    childrenCount,
+    handlers,
+    methods,
+    options,
+  } = node;
 
   const path = `${prefix}${nodePath}`;
 
   let result: RoutesT<Request, Response> = [];
 
   for (const method of methods) {
-    result.push([method, path, handlers[method]!]);
+    result.push([method, path, options[method], handlers[method]!]);
   }
 
   const labels = Object.keys(children);

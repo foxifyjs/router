@@ -2,9 +2,14 @@ import type {
   MethodT,
   Request as RequestT,
   Response as ResponseT,
+  StatusT,
+  StringifyT,
 } from "@foxify/http";
+import { Schema as JsonSchemaT } from "fast-json-stringify";
 import type NodeT from "./Node";
 import type RouterT from "./Router";
+
+export const EMPTY_OPTIONS: NodeMethodOptionsI = { schema: { response: {} } };
 
 export const EMPTY_RESULT = {};
 
@@ -12,6 +17,28 @@ export const enum NODE {
   STATIC,
   PARAM,
   MATCH_ALL,
+}
+
+export type NodeOptionsT = {
+  [Method in MethodT]: NodeMethodOptionsI;
+};
+
+export interface NodeMethodOptionsI {
+  schema: NodeSchemaOptionsI;
+}
+
+export interface NodeSchemaOptionsI {
+  response: {
+    [statusCode in StatusT]?: StringifyT;
+  };
+}
+
+export interface OptionsI {
+  schema?: SchemaOptionsI;
+}
+
+export interface SchemaOptionsI {
+  response?: { [statusCode in StatusT]?: JsonSchemaT | StringifyT };
 }
 
 export type NextT = (error?: Error) => void;
@@ -26,7 +53,12 @@ export interface ParamHandlerI<
 export type RoutesT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
-> = [method: MethodT, path: string, handlers: HandlerT<Request, Response>[]][];
+> = [
+  method: MethodT,
+  path: string,
+  options: NodeMethodOptionsI,
+  handlers: HandlerT<Request, Response>[],
+][];
 
 export type HandlerT<
   Request extends RequestT = RequestT,
@@ -83,6 +115,7 @@ export type HandlersResultT<
 > = {
   handlers?: HandlerT<Request, Response>[];
   allowHeader: string;
+  options: NodeMethodOptionsI;
 };
 
 export type NodeHandlersT<
@@ -103,7 +136,16 @@ export type ShortHandRouteT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT,
   Router extends RouterT<Request, Response> = RouterT<Request, Response>
-> = (path: string, ...handlers: HandlersT<Request, Response>) => Router;
+> = (
+  path: string,
+  options?:
+    | OptionsI
+    | HandlersT<Request, Response>
+    | HandlerT<Request, Response>
+    | false
+    | null,
+  ...handlers: HandlersT<Request, Response>
+) => Router;
 
 export type RouteMethodT<
   Request extends RequestT = RequestT,
@@ -112,7 +154,15 @@ export type RouteMethodT<
     Request,
     Response
   >
-> = (...handlers: HandlersT<Request, Response>) => This;
+> = (
+  options?:
+    | OptionsI
+    | HandlersT<Request, Response>
+    | HandlerT<Request, Response>
+    | false
+    | null,
+  ...handlers: HandlersT<Request, Response>
+) => This;
 
 export type RouteMethodsT<
   Request extends RequestT = RequestT,

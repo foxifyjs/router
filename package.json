@@ -1,6 +1,6 @@
 {
   "name": "@foxify/router",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Foxify Router",
   "homepage": "https://github.com/foxifyjs/router#readme",
   "repository": {
@@ -9,6 +9,9 @@
   },
   "bugs": {
     "url": "https://github.com/foxifyjs/router/issues"
+  },
+  "funding": {
+    "url": "https://opencollective.com/foxify"
   },
   "license": "MIT",
   "author": {
@@ -39,6 +42,10 @@
     "@foxify/http": "^1",
     "prototyped.js": "^1"
   },
+  "dependencies": {
+    "escape-html": "^1.0.3",
+    "fast-json-stringify": "^1.21.0"
+  },
   "devDependencies": {
     "@foxify/http": "^1.0.0-beta.2",
     "@foxify/inject": "^1.1.0",
@@ -54,8 +61,5 @@
   },
   "workspaces": [
     "benchmarks"
-  ],
-  "dependencies": {
-    "escape-html": "^1.0.3"
-  }
+  ]
 }
