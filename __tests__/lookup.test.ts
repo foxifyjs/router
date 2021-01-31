@@ -2,7 +2,7 @@ import { inject } from "./__internals__";
 import Router from "../src";
 
 it("should call the handler", async () => {
-  expect.assertions(3);
+  expect.assertions(2);
 
   const router = new Router();
 
@@ -12,16 +12,15 @@ it("should call the handler", async () => {
   router.get(path, handler);
 
   const {
-    raw: { req, res },
+    raw: { req },
   } = await inject(router, path);
 
   expect(handler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
 });
 
 it("should call the middleware & then the handler", async () => {
-  expect.assertions(4);
+  expect.assertions(3);
 
   const router = new Router();
 
@@ -32,17 +31,16 @@ it("should call the middleware & then the handler", async () => {
   router.get(path, middleware, handler);
 
   const {
-    raw: { req, res },
+    raw: { req },
   } = await inject(router, path);
 
   expect(middleware).toBeCalledTimes(1);
   expect(handler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
 });
 
 it("should respond with 404 status", async () => {
-  expect.assertions(4);
+  expect.assertions(3);
 
   const router = new Router();
 
@@ -52,12 +50,11 @@ it("should respond with 404 status", async () => {
   router.get(path, handler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     statusCode,
   } = await inject(router, path);
 
   expect(handler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(statusCode).toBe(404);
 });
@@ -84,7 +81,7 @@ it("should respond with 405 status", async () => {
 });
 
 it("should call the error handler", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -101,19 +98,18 @@ it("should call the error handler", async () => {
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, path);
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("TEST");
 });
 
 it("should call the error handler if next is called with an error", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -130,19 +126,18 @@ it("should call the error handler if next is called with an error", async () => 
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, path);
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("TEST");
 });
 
 it("should catch Promise errors", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -159,19 +154,18 @@ it("should catch Promise errors", async () => {
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, path);
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("TEST");
 });
 
 it("should fallback to the default error handler", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -188,7 +182,7 @@ it("should fallback to the default error handler", async () => {
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, {
     url: path,
@@ -199,13 +193,12 @@ it("should fallback to the default error handler", async () => {
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("DAMN");
 });
 
 it("should fallback to the default error handler (Promise)", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -222,7 +215,7 @@ it("should fallback to the default error handler (Promise)", async () => {
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, {
     url: path,
@@ -233,13 +226,12 @@ it("should fallback to the default error handler (Promise)", async () => {
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("DAMN");
 });
 
 it("should fallback to the default error handler if next is called with an error in one of the registered error handlers", async () => {
-  expect.assertions(5);
+  expect.assertions(4);
 
   const router = new Router();
 
@@ -256,7 +248,7 @@ it("should fallback to the default error handler if next is called with an error
   router.catch(errorHandler);
 
   const {
-    raw: { req, res },
+    raw: { req },
     body,
   } = await inject(router, {
     url: path,
@@ -267,7 +259,6 @@ it("should fallback to the default error handler if next is called with an error
 
   expect(handler).toBeCalledTimes(1);
   expect(errorHandler).toBeCalledTimes(1);
-  expect(res.getHeader("Allow")).toBe("GET");
   expect(req.params).toEqual({});
   expect(body).toEqual("DAMN");
 });

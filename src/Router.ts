@@ -12,7 +12,7 @@ import {
 import assert from "assert";
 import escapeHtml from "escape-html";
 import { STATUS_CODES } from "http";
-import { compact, deepFlatten } from "prototyped.js/es6/array/methods";
+import { compact, deepFlatten } from "prototyped.js/dist/array";
 import {
   EMPTY_OPTIONS,
   EMPTY_RESULT,
@@ -99,10 +99,10 @@ class Router<
     const {
       handlers = [],
       allowHeader = "",
-      options = EMPTY_OPTIONS,
+      options: { schema: { response: stringify } } = EMPTY_OPTIONS,
     } = this.find(method, path, params);
 
-    response.stringify = options.schema.response;
+    response.stringify = stringify;
 
     const next = this.generateNext(
       request,
@@ -113,8 +113,6 @@ class Router<
     );
 
     response.next = next;
-
-    if (allowHeader !== "") response.setHeader("Allow", allowHeader);
 
     next();
   }
@@ -482,7 +480,7 @@ class Router<
 
       if (index === length) {
         if (allowHeader.length > 0 && allowHeader.indexOf(method) === -1) {
-          return this.throw(new MethodNotAllowed(), req, res);
+          return this.throw(new MethodNotAllowed(allowHeader), req, res);
         }
 
         return this.throw(new NotFound(), req, res);
@@ -551,10 +549,16 @@ class Router<
       return request.socket.destroy();
     }
 
-    const {
-      message = STATUS_CODES[STATUS.INTERNAL_SERVER_ERROR]!,
-      stack,
-    } = error;
+    const stack = error.stack;
+    let message = error.message;
+
+    if (error instanceof MethodNotAllowed) {
+      response.setHeader("Allow", message);
+
+      message = STATUS_CODES[STATUS.METHOD_NOT_ALLOWED]!;
+    } else if (!message) {
+      message = STATUS_CODES[STATUS.INTERNAL_SERVER_ERROR]!;
+    }
 
     const stackDetails = stack
       ?.split(/\r?\n/)
