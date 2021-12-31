@@ -493,7 +493,7 @@ class Router<
           result.catch((error) => this.throw(error, req, res));
         }
       } catch (error) {
-        this.throw(error, req, res);
+        this.throw(error as Error, req, res);
       }
     };
 
@@ -533,7 +533,7 @@ class Router<
           result.catch((err) => this.defaultCatch(err, req, res));
         }
       } catch (err) {
-        this.defaultCatch(err, req, res);
+        this.defaultCatch(err as Error, req, res);
       }
     };
 
