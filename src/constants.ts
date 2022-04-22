@@ -11,7 +11,13 @@ import type RouterT from "./Router";
 
 export const EMPTY_OPTIONS: NodeMethodOptionsI = { schema: { response: {} } };
 
-export const EMPTY_RESULT = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const EMPTY_RESULT: HandlersResultT<any, any> = {
+  handlers: [],
+  allowHeader: "",
+  options: EMPTY_OPTIONS,
+  params: {},
+};
 
 export const enum NODE {
   STATIC,
@@ -113,9 +119,11 @@ export type HandlersResultT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
 > = {
-  handlers?: HandlerT<Request, Response>[];
+  handlers: HandlerT<Request, Response>[];
   allowHeader: string;
   options: NodeMethodOptionsI;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: Record<string, any>;
 };
 
 export type NodeHandlersT<

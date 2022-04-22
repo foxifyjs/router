@@ -8,12 +8,9 @@ it("should find match all route", () => {
 
   router.on(method, "/static/*file", handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/static/some/file.ext",
-    params,
   );
 
   expect(handlers).toEqual([handler]);

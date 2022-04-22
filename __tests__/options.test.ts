@@ -9,13 +9,11 @@ it("should return the empty options", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
+  const { handlers, allowHeader, options, params } = router.find("POST", path);
 
-  const { handlers, allowHeader, options } = router.find("POST", path, params);
-
-  expect(handlers).toBeUndefined();
+  expect(handlers).toEqual([]);
   expect(allowHeader).toBe(method);
-  expect(options).toBeUndefined();
+  expect(options).toEqual({ schema: { response: {} } });
   expect(params).toEqual({});
 });
 
@@ -28,9 +26,7 @@ it("should return the default options", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader, options } = router.find(method, path, params);
+  const { handlers, allowHeader, options, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -61,9 +57,7 @@ it("should return the correct options", () => {
     handler,
   );
 
-  const params = {};
-
-  const { handlers, allowHeader, options } = router.find(method, path, params);
+  const { handlers, allowHeader, options, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -97,9 +91,7 @@ it("should respect sub-router options", () => {
 
   router.use(subRouter);
 
-  const params = {};
-
-  const { handlers, allowHeader, options } = router.find(method, path, params);
+  const { handlers, allowHeader, options, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);

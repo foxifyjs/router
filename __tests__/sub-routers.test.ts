@@ -12,9 +12,7 @@ it("should add sub-router", () => {
 
   router.use(subRouter);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -32,12 +30,9 @@ it("should respect sub-router prefix", () => {
 
   router.use(subRouter);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/prefix/foo/bar",
-    params,
   );
 
   expect(handlers).toEqual([handler]);
@@ -56,12 +51,9 @@ it("should apply current prefix to sub-router", () => {
 
   router.use(subRouter);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/prefix/foo/bar",
-    params,
   );
 
   expect(handlers).toEqual([handler]);
@@ -80,12 +72,9 @@ it("should respect sub-router prefix & apply current prefix to sub-router", () =
 
   router.use(subRouter);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/prefix-1/prefix-2/foo/bar",
-    params,
   );
 
   expect(handlers).toEqual([handler]);

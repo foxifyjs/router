@@ -12,9 +12,7 @@ it("should add middleware", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([middleware, handler]);
   expect(allowHeader).toBe(method);
@@ -33,9 +31,7 @@ it("shouldn't add middleware", () => {
 
   router.use(middleware);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -53,9 +49,7 @@ it("shouldn't throw any errors if no middleware is passed", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);

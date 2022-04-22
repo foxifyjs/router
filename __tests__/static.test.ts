@@ -10,9 +10,7 @@ it("should find index route", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -28,9 +26,7 @@ it("should register routes via method aliases", () => {
 
   router.get(path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -46,9 +42,7 @@ it("should register route with all http methods", () => {
 
   router.all(path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(METHODS.join(", "));
@@ -64,9 +58,7 @@ it("should add multiple method handlers to registered route", () => {
 
   router.route(path).get(handler).post(handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe("GET, POST");
@@ -82,9 +74,7 @@ it("should find long static route", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -100,9 +90,7 @@ it("should find short static route", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(method, path, params);
+  const { handlers, allowHeader, params } = router.find(method, path);
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe(method);
@@ -123,12 +111,9 @@ it("should find static route same radix", () => {
     router.on(method as MethodT, url, handler),
   );
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     "GET",
     "/user/comments",
-    params,
   );
 
   expect(handlers).toEqual([handler]);
@@ -149,9 +134,7 @@ it("should fallback to the neighbor dynamic route", () => {
     router.on(method as MethodT, url, handler),
   );
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find("GET", "/users/me", params);
+  const { handlers, allowHeader, params } = router.find("GET", "/users/me");
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe("GET");
@@ -171,13 +154,11 @@ it("should fallback to the neighbor match all route", () => {
     router.on(method as MethodT, url, handler),
   );
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find("GET", "/users/me", params);
+  const { handlers, allowHeader, params } = router.find("GET", "/users/me");
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe("GET");
-  expect(params).toEqual({ "*": "me" });
+  expect(params).toEqual({ $: "me" });
 });
 
 it("should fallback to the neighbor match all route and not the dynamic route", () => {
@@ -194,17 +175,14 @@ it("should fallback to the neighbor match all route and not the dynamic route", 
     router.on(method as MethodT, url, handler),
   );
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     "GET",
     "/users/me/info",
-    params,
   );
 
   expect(handlers).toEqual([handler]);
   expect(allowHeader).toBe("GET");
-  expect(params).toEqual({ "*": "me/info" });
+  expect(params).toEqual({ $: "me/info" });
 });
 
 it("shouldn't find unregistered route", () => {
@@ -216,16 +194,13 @@ it("shouldn't find unregistered route", () => {
 
   router.on(method, path, handler);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/some/other/route",
-    params,
   );
 
-  expect(handlers).toBeUndefined();
-  expect(allowHeader).toBeUndefined();
+  expect(handlers).toEqual([]);
+  expect(allowHeader).toEqual("");
   expect(params).toEqual({});
 });
 
@@ -237,15 +212,12 @@ it("should ignore routes with no handlers registered", () => {
 
   router.on(method, path);
 
-  const params = {};
-
-  const { handlers, allowHeader } = router.find(
+  const { handlers, allowHeader, params } = router.find(
     method,
     "/some/other/route",
-    params,
   );
 
-  expect(handlers).toBeUndefined();
-  expect(allowHeader).toBeUndefined();
+  expect(handlers).toEqual([]);
+  expect(allowHeader).toEqual("");
   expect(params).toEqual({});
 });

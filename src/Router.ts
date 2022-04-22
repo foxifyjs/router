@@ -14,7 +14,6 @@ import escapeHtml from "escape-html";
 import { STATUS_CODES } from "http";
 import { compact, deepFlatten } from "prototyped.js/dist/array";
 import {
-  EMPTY_OPTIONS,
   EMPTY_RESULT,
   ErrorHandlersT,
   ErrorHandlerT,
@@ -94,14 +93,16 @@ class Router<
   public constructor(protected readonly prefix = "/") {}
 
   public lookup(request: Request, response: Response): void {
-    const { method, path, params } = request;
+    const { method, path } = request;
 
     const {
-      handlers = [],
-      allowHeader = "",
-      options: { schema: { response: stringify } } = EMPTY_OPTIONS,
-    } = this.find(method, path, params);
+      handlers,
+      allowHeader,
+      options: { schema: { response: stringify } },
+      params
+    } = this.find(method, path);
 
+    Object.assign(request.params, params);
     response.stringify = stringify;
 
     const next = this.generateNext(
@@ -120,14 +121,15 @@ class Router<
   public find(
     method: MethodT,
     path: string,
-    params: Record<string, unknown> = {},
-  ): Partial<HandlersResultT<Request, Response>> {
+  ): HandlersResultT<Request, Response> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: Record<string, any> = {};
     let node: Node<Request, Response> | undefined = this.tree;
     let position = 0;
 
     if (path[0] === "/") {
       if (path.length === 1) {
-        return node.findHandlers(method);
+        return node.findHandlers(method, params);
       }
 
       position = 1;
@@ -155,7 +157,7 @@ class Router<
               continue;
             }
           } else if (length === prefixLength && path.indexOf(prefix, position) === position) {
-            return node.findHandlers(method);
+            return node.findHandlers(method, params);
           }
 
           const paramNode = node.neighborParamNode;
@@ -176,7 +178,7 @@ class Router<
           if (slashIndex === -1) {
             params[param!] = path.slice(position);
 
-            return node.findHandlers(method);
+            return node.findHandlers(method, params);
           }
 
           if (childrenCount > 0) {
@@ -193,13 +195,8 @@ class Router<
 
           if (node === undefined) return EMPTY_RESULT;
         }
-        case NODE.MATCH_ALL: {
-          const { param, matchAllParamRegExp } = node;
-
-          params[param!] = path.match(matchAllParamRegExp!)![1];
-
-          return node.findHandlers(method);
-        }
+        case NODE.MATCH_ALL:
+          return node.findHandlers(method, path.match(node.matchAllParamRegExp!)!.groups);
       }
     }
   }
@@ -348,8 +345,9 @@ class Router<
           if (node.matchAllParamRegExp === undefined) {
             node.matchAllParamRegExp = new RegExp(
               `^${originalPath
-                .replace(/(:[^/]+)/g, "[^/]+")
-                .replace(/\*.*/, "(.*)")}$`,
+                .replace(/:([^/]+)/g, "(?<$1>[^/]+)")
+                .replace(/\*([^/]+)$/, "(?<$1>.*)")
+                .replace(/\*$/, "(?<$>.*)")}$`
             );
           }
 

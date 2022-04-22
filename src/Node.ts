@@ -6,6 +6,7 @@ import {
 } from "@foxify/http";
 import fastJson from "fast-json-stringify";
 import {
+  EMPTY_OPTIONS,
   HandlersResultT,
   HandlerT,
   NODE,
@@ -118,14 +119,15 @@ class Node<
     return this;
   }
 
-  public findHandlers(method: MethodT): HandlersResultT<Request, Response> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public findHandlers(method: MethodT, params: Record<string, any> = {}): HandlersResultT<Request, Response> {
     const {
-      handlers: { [method]: handlers },
+      handlers: { [method]: handlers = [] },
       allowHeader,
-      options: { [method]: options },
+      options: { [method]: options = EMPTY_OPTIONS },
     } = this;
 
-    return { handlers, allowHeader, options };
+    return { handlers, allowHeader, options, params };
   }
 
   public addChild(node: Node<Request, Response>): Node<Request, Response>;
@@ -166,10 +168,12 @@ class Node<
         this.param = prefix.slice(1);
         this.type = NODE.PARAM;
 
+        if (this.param === "$") throw new Error("Invalid parameter name");
+
         break;
       }
       case "*": {
-        this.param = prefix.slice(1) || "*";
+        this.param = prefix.slice(1) || "$";
         this.type = NODE.MATCH_ALL;
 
         break;
