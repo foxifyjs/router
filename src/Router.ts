@@ -122,18 +122,18 @@ class Router<
     path: string,
     params: Record<string, unknown> = {},
   ): Partial<HandlersResultT<Request, Response>> {
-    const originalPath = path;
     let node: Node<Request, Response> | undefined = this.tree;
+    let position = 0;
 
     if (path[0] === "/") {
       if (path.length === 1) {
         return node.findHandlers(method);
       }
 
-      path = path.slice(1);
+      position = 1;
     }
 
-    node = node.findChild(path);
+    node = node.findChild(path, position);
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -144,15 +144,17 @@ class Router<
         case NODE.STATIC: {
           const { prefix, prefixLength, childrenCount } = node;
 
-          if (path.length > prefixLength) {
-            if (childrenCount > 0 && path.slice(0, prefixLength) === prefix) {
-              path = path.slice(prefixLength);
+          const length = path.length - position;
 
-              node = node.findChild(path);
+          if (length > prefixLength) {
+            if (childrenCount > 0 && path.indexOf(prefix, position) === position) {
+              position += prefixLength;
+
+              node = node.findChild(path, position);
 
               continue;
             }
-          } else if (prefix === path) {
+          } else if (length === prefixLength && path.indexOf(prefix, position) === position) {
             return node.findHandlers(method);
           }
 
@@ -169,20 +171,20 @@ class Router<
         case NODE.PARAM: {
           const { childrenCount, param } = node;
 
-          const slashIndex = path.indexOf("/");
+          const slashIndex = path.indexOf("/", position);
 
           if (slashIndex === -1) {
-            params[param!] = path;
+            params[param!] = path.slice(position);
 
             return node.findHandlers(method);
           }
 
           if (childrenCount > 0) {
-            params[param!] = path.slice(0, slashIndex);
+            params[param!] = path.slice(position, slashIndex);
 
-            path = path.slice(slashIndex);
+            position = slashIndex;
 
-            node = node.findChild(path);
+            node = node.findChild(path, position);
 
             continue;
           }
@@ -194,7 +196,7 @@ class Router<
         case NODE.MATCH_ALL: {
           const { param, matchAllParamRegExp } = node;
 
-          params[param!] = originalPath.match(matchAllParamRegExp!)![1];
+          params[param!] = path.match(matchAllParamRegExp!)![1];
 
           return node.findHandlers(method);
         }

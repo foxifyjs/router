@@ -151,10 +151,10 @@ class Node<
     return this.children[label];
   }
 
-  public findChild(path: string): Node<Request, Response> | undefined {
+  public findChild(path: string, index = 0): Node<Request, Response> | undefined {
     const { children } = this;
 
-    return children[path[0]] || children[":"] || children["*"];
+    return children[path[index]] ?? children[":"] ?? children["*"];
   }
 
   protected init(prefix: string): this {
