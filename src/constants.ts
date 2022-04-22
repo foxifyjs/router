@@ -9,6 +9,10 @@ import { Schema as JsonSchemaT } from "fast-json-stringify";
 import type NodeT from "./Node";
 import type RouterT from "./Router";
 
+export const PARAM_LABEL = ":" as const;
+
+export const WILDCARD_LABEL = "*" as const;
+
 export const EMPTY_OPTIONS: NodeMethodOptionsI = { schema: { response: {} } };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +30,7 @@ export const enum NODE {
 }
 
 export type NodeOptionsT = {
-  [Method in MethodT]: NodeMethodOptionsI;
+  readonly [Method in MethodT]-?: NodeMethodOptionsI;
 };
 
 export interface NodeMethodOptionsI {
@@ -130,7 +134,7 @@ export type NodeHandlersT<
   Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT
 > = {
-  [Method in MethodT]?: HandlerT<Request, Response>[];
+  readonly [Method in MethodT]-?: HandlerT<Request, Response>[];
 };
 
 export type NodeChildrenT<

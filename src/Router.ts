@@ -24,10 +24,12 @@ import {
   NextT,
   NODE,
   OptionsI,
+  PARAM_LABEL,
   ParamHandlerI,
   RouteMethodsT,
   RoutesT,
   ShortHandRouteT,
+  WILDCARD_LABEL,
 } from "./constants";
 import Node from "./Node";
 import {
@@ -37,10 +39,8 @@ import {
   routes,
 } from "./utils";
 
-interface Router<
-  Request extends RequestT = RequestT,
-  Response extends ResponseT = ResponseT
-> {
+interface Router<Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT> {
   acl: ShortHandRouteT<Request, Response, this>;
   bind: ShortHandRouteT<Request, Response, this>;
   checkout: ShortHandRouteT<Request, Response, this>;
@@ -78,10 +78,8 @@ interface Router<
   unsubscribe: ShortHandRouteT<Request, Response, this>;
 }
 
-class Router<
-  Request extends RequestT = RequestT,
-  Response extends ResponseT = ResponseT
-> {
+class Router<Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT> {
   protected readonly tree = new Node<Request, Response>();
 
   protected readonly paramHandlers: ParamHandlerI<Request, Response> = {};
@@ -90,7 +88,8 @@ class Router<
 
   protected catchers: ErrorHandlerT<Request, Response>[] = [];
 
-  public constructor(protected readonly prefix = "/") {}
+  public constructor(protected readonly prefix = "/") {
+  }
 
   public lookup(request: Request, response: Response): void {
     const { method, path } = request;
@@ -99,7 +98,7 @@ class Router<
       handlers,
       allowHeader,
       options: { schema: { response: stringify } },
-      params
+      params,
     } = this.find(method, path);
 
     Object.assign(request.params, params);
@@ -135,54 +134,53 @@ class Router<
       position = 1;
     }
 
+    let prefixLength = 0;
+    let length = 0;
+    let slashIndex = -1;
+    let tempNode: Node<Request, Response> | undefined = node;
+
     node = node.findChild(path, position);
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
+    do {
       if (node === undefined) return EMPTY_RESULT;
 
       switch (node.type) {
-        default:
-        case NODE.STATIC: {
-          const { prefix, prefixLength, childrenCount } = node;
-
-          const length = path.length - position;
+        case NODE.STATIC:
+          prefixLength = node.prefixLength;
+          length = path.length - position;
 
           if (length > prefixLength) {
-            if (childrenCount > 0 && path.indexOf(prefix, position) === position) {
+            if (node.childrenCount > 0 && path.indexOf(node.prefix, position) === position) {
               position += prefixLength;
 
               node = node.findChild(path, position);
 
               continue;
             }
-          } else if (length === prefixLength && path.indexOf(prefix, position) === position) {
+          } else if (length === prefixLength && path.indexOf(node.prefix, position) === position) {
             return node.findHandlers(method, params);
           }
 
-          const paramNode = node.neighborParamNode;
+          tempNode = node.neighborParamNode;
 
-          if (paramNode === undefined) {
+          if (tempNode === undefined) {
             node = node.matchingWildcardNode;
 
             continue;
           }
 
-          node = paramNode;
-        }
-        case NODE.PARAM: {
-          const { childrenCount, param } = node;
-
-          const slashIndex = path.indexOf("/", position);
+          node = tempNode;
+        case NODE.PARAM:
+          slashIndex = path.indexOf("/", position);
 
           if (slashIndex === -1) {
-            params[param!] = path.slice(position);
+            params[node.param!] = path.slice(position);
 
             return node.findHandlers(method, params);
           }
 
-          if (childrenCount > 0) {
-            params[param!] = path.slice(position, slashIndex);
+          if (node.childrenCount > 0) {
+            params[node.param!] = path.slice(position, slashIndex);
 
             position = slashIndex;
 
@@ -194,11 +192,13 @@ class Router<
           node = node.matchingWildcardNode;
 
           if (node === undefined) return EMPTY_RESULT;
-        }
         case NODE.MATCH_ALL:
-          return node.findHandlers(method, path.match(node.matchAllParamRegExp!)!.groups);
+          return node.findHandlers(method, node.matchAllParamRegExp!.exec(path)!.groups);
+        default:
+          throw new Error("Unknown node type");
       }
-    }
+      // eslint-disable-next-line no-constant-condition
+    } while (true);
   }
 
   public catch(...handlers: ErrorHandlersT<Request, Response>): this {
@@ -331,7 +331,7 @@ class Router<
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      matchAllNode = currentNode.findChildByLabel("*") || matchAllNode;
+      matchAllNode = currentNode.findChildByLabel(WILDCARD_LABEL) || matchAllNode;
 
       if (path.length === 0) {
         for (const param of params) {
@@ -347,7 +347,7 @@ class Router<
               `^${originalPath
                 .replace(/:([^/]+)/g, "(?<$1>[^/]+)")
                 .replace(/\*([^/]+)$/, "(?<$1>.*)")
-                .replace(/\*$/, "(?<$>.*)")}$`
+                .replace(/\*$/, "(?<$>.*)")}$`,
             );
           }
 
@@ -356,7 +356,7 @@ class Router<
           if (node.type === NODE.PARAM) {
             assignParamNode(currentNode, node);
           } else {
-            node.neighborParamNode = currentNode.findChildByLabel(":");
+            node.neighborParamNode = currentNode.findChildByLabel(PARAM_LABEL);
           }
 
           node.matchingWildcardNode = matchAllNode;
@@ -376,9 +376,9 @@ class Router<
       node = currentNode.findChildByLabel(path[0]);
 
       if (node === undefined) {
-        let paramIndex = path.indexOf(":");
+        let paramIndex = path.indexOf(PARAM_LABEL);
 
-        if (paramIndex === -1) paramIndex = path.indexOf("*");
+        if (paramIndex === -1) paramIndex = path.indexOf(WILDCARD_LABEL);
 
         if (paramIndex !== -1) {
           if (paramIndex > 0) {
@@ -422,7 +422,7 @@ class Router<
       let length = 0;
       while (length < max && path[length] === prefix[length]) length++;
 
-      if (prefix[0] === ":" || prefix[0] === "*") {
+      if (prefix[0] === PARAM_LABEL || prefix[0] === WILDCARD_LABEL) {
         if (length !== prefixLength) {
           throw new Error("Can't assign multiple names to the same parameter");
         }

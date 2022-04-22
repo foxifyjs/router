@@ -6,7 +6,6 @@ import {
 } from "@foxify/http";
 import fastJson from "fast-json-stringify";
 import {
-  EMPTY_OPTIONS,
   HandlersResultT,
   HandlerT,
   NODE,
@@ -15,22 +14,22 @@ import {
   NodeOptionsT,
   NodeSchemaOptionsI,
   OptionsI,
+  PARAM_LABEL,
+  WILDCARD_LABEL,
 } from "./constants";
+import Handlers from "./Handlers";
+import Options from "./Options";
 
-interface Node<
-  Request extends RequestT = RequestT,
-  Response extends ResponseT = ResponseT
-> {
+interface Node<Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT> {
   constructor: typeof Node;
 }
 
-class Node<
-  Request extends RequestT = RequestT,
-  Response extends ResponseT = ResponseT
-> {
-  public readonly handlers: NodeHandlersT<Request, Response> = {};
+class Node<Request extends RequestT = RequestT,
+  Response extends ResponseT = ResponseT> {
+  public readonly handlers: NodeHandlersT<Request, Response> = new Handlers<Request, Response>();
 
-  public readonly options: NodeOptionsT = {} as never;
+  public readonly options: NodeOptionsT = new Options();
 
   public readonly children: NodeChildrenT<Request, Response> = {};
 
@@ -40,13 +39,13 @@ class Node<
 
   public childrenCount = 0;
 
-  public neighborParamNode?: Node<Request, Response>;
+  public neighborParamNode?: Node<Request, Response> = undefined;
 
-  public matchingWildcardNode?: Node<Request, Response>;
+  public matchingWildcardNode?: Node<Request, Response> = undefined;
 
-  public matchAllParamRegExp?: RegExp;
+  public matchAllParamRegExp?: RegExp = undefined;
 
-  public param?: string;
+  public param?: string = undefined;
 
   public label!: string;
 
@@ -58,10 +57,8 @@ class Node<
     this.init(prefix);
   }
 
-  public static isNode<
-    Request extends RequestT = RequestT,
-    Response extends ResponseT = ResponseT
-  >(value: unknown): value is Node<Request, Response> {
+  public static isNode<Request extends RequestT = RequestT,
+    Response extends ResponseT = ResponseT>(value: unknown): value is Node<Request, Response> {
     return value instanceof this;
   }
 
@@ -76,13 +73,11 @@ class Node<
     options: OptionsI,
     handlers: HandlerT<Request, Response>[],
   ): this {
-    let nodeHandlers = this.handlers[method];
-    let nodeOptions = this.options[method];
+    if (handlers.length === 0) return this;
 
-    if (nodeHandlers === undefined) {
-      nodeHandlers = this.handlers[method] = [];
-      nodeOptions = this.options[method] = {} as never;
+    const nodeHandlers = this.handlers[method];
 
+    if (nodeHandlers.length === 0) {
       this.methods.push(method);
       this.methods.sort();
       this.allowHeader = this.methods.join(", ");
@@ -112,7 +107,7 @@ class Node<
       {} as NodeSchemaOptionsI["response"],
     );
 
-    this.options[method] = { ...nodeOptions, ...options } as never;
+    Object.assign(this.options[method], options);
 
     nodeHandlers.push(...handlers);
 
@@ -122,9 +117,9 @@ class Node<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public findHandlers(method: MethodT, params: Record<string, any> = {}): HandlersResultT<Request, Response> {
     const {
-      handlers: { [method]: handlers = [] },
+      handlers: { [method]: handlers },
       allowHeader,
-      options: { [method]: options = EMPTY_OPTIONS },
+      options: { [method]: options },
     } = this;
 
     return { handlers, allowHeader, options, params };
@@ -154,9 +149,9 @@ class Node<
   }
 
   public findChild(path: string, index = 0): Node<Request, Response> | undefined {
-    const { children } = this;
+    const children = this.children;
 
-    return children[path[index]] ?? children[":"] ?? children["*"];
+    return children[path[index]] ?? children[PARAM_LABEL] ?? children[WILDCARD_LABEL];
   }
 
   protected init(prefix: string): this {
@@ -164,7 +159,7 @@ class Node<
     this.label = prefix[0];
 
     switch (this.label) {
-      case ":": {
+      case PARAM_LABEL: {
         this.param = prefix.slice(1);
         this.type = NODE.PARAM;
 
@@ -172,7 +167,7 @@ class Node<
 
         break;
       }
-      case "*": {
+      case WILDCARD_LABEL: {
         this.param = prefix.slice(1) || "$";
         this.type = NODE.MATCH_ALL;
 
