@@ -3,13 +3,12 @@
   "devDependencies": {
     "@hapi/call": "^8.0.1",
     "benchmark": "^2.1.4",
-    "chalk": "^4.1.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "foxify": "^0.10.20",
-    "find-my-way": "^3.0.5",
-    "koa-router": "^10.0.0",
-    "koa-tree-router": "^0.7.0",
-    "table": "^6.0.4",
+    "find-my-way": "^5.5.0",
+    "koa-router": "^10.1.1",
+    "koa-tree-router": "^0.10.1",
+    "table": "^6.8.0",
     "trek-router": "^1.2.0"
   }
 }
