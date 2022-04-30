@@ -15,6 +15,7 @@ import {
   NodeSchemaOptionsI,
   OptionsI,
   PARAM_LABEL,
+  ParamsT,
   WILDCARD_LABEL,
 } from "./constants";
 import Handlers from "./Handlers";
@@ -114,8 +115,7 @@ class Node<Request extends RequestT = RequestT,
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public findHandlers(method: MethodT, params: Record<string, any> = {}): HandlersResultT<Request, Response> {
+  public findHandlers(method: MethodT, params: ParamsT = {}): HandlersResultT<Request, Response> {
     const {
       handlers: { [method]: handlers },
       allowHeader,

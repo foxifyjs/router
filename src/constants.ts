@@ -29,6 +29,9 @@ export const enum NODE {
   MATCH_ALL,
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ParamsT = Record<string, any>
+
 export type NodeOptionsT = {
   readonly [Method in MethodT]-?: NodeMethodOptionsI;
 };
@@ -126,8 +129,7 @@ export type HandlersResultT<
   handlers: HandlerT<Request, Response>[];
   allowHeader: string;
   options: NodeMethodOptionsI;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: Record<string, any>;
+  params: ParamsT;
 };
 
 export type NodeHandlersT<

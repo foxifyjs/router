@@ -26,6 +26,7 @@ import {
   OptionsI,
   PARAM_LABEL,
   ParamHandlerI,
+  ParamsT,
   RouteMethodsT,
   RoutesT,
   ShortHandRouteT,
@@ -121,84 +122,70 @@ class Router<Request extends RequestT = RequestT,
     method: MethodT,
     path: string,
   ): HandlersResultT<Request, Response> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const params: Record<string, any> = {};
     let node: Node<Request, Response> | undefined = this.tree;
     let position = 0;
 
     if (path[0] === "/") {
-      if (path.length === 1) {
-        return node.findHandlers(method, params);
-      }
+      if (path.length === 1) return node.findHandlers(method);
 
       position = 1;
     }
 
-    let prefixLength = 0;
-    let length = 0;
+    let params: ParamsT = {};
     let slashIndex = -1;
-    let tempNode: Node<Request, Response> | undefined = node;
 
     node = node.findChild(path, position);
 
-    do {
-      if (node === undefined) return EMPTY_RESULT;
-
+    while (node !== undefined) {
       switch (node.type) {
         case NODE.STATIC:
-          prefixLength = node.prefixLength;
-          length = path.length - position;
-
-          if (length > prefixLength) {
-            if (node.childrenCount > 0 && path.indexOf(node.prefix, position) === position) {
-              position += prefixLength;
-
-              node = node.findChild(path, position);
-
-              continue;
-            }
-          } else if (length === prefixLength && path.indexOf(node.prefix, position) === position) {
-            return node.findHandlers(method, params);
-          }
-
-          tempNode = node.neighborParamNode;
-
-          if (tempNode === undefined) {
-            node = node.matchingWildcardNode;
+          if (path.indexOf(node.prefix, position) !== position) {
+            node = node.neighborParamNode ?? node.matchingWildcardNode;
 
             continue;
           }
 
-          node = tempNode;
+          position += node.prefixLength;
+
+          if (path.length === position) break;
+
+          node = node.findChild(path, position);
+
+          continue;
         case NODE.PARAM:
           slashIndex = path.indexOf("/", position);
 
           if (slashIndex === -1) {
             params[node.param!] = path.slice(position);
 
-            return node.findHandlers(method, params);
+            break;
           }
 
-          if (node.childrenCount > 0) {
-            params[node.param!] = path.slice(position, slashIndex);
-
-            position = slashIndex;
-
-            node = node.findChild(path, position);
+          if (node.childrenCount === 0) {
+            node = node.matchingWildcardNode;
 
             continue;
           }
 
-          node = node.matchingWildcardNode;
+          params[node.param!] = path.slice(position, slashIndex);
 
-          if (node === undefined) return EMPTY_RESULT;
+          position = slashIndex;
+
+          node = node.findChild(path, position);
+
+          continue;
         case NODE.MATCH_ALL:
-          return node.findHandlers(method, node.matchAllParamRegExp!.exec(path)!.groups);
+          params = node.matchAllParamRegExp!.exec(path)!.groups!;
+
+          break;
         default:
           throw new Error("Unknown node type");
       }
-      // eslint-disable-next-line no-constant-condition
-    } while (true);
+
+      return node.findHandlers(method, params);
+    }
+
+    return EMPTY_RESULT;
   }
 
   public catch(...handlers: ErrorHandlersT<Request, Response>): this {

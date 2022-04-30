@@ -31,7 +31,9 @@
   "types": ".build/cjs/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "build:watch": "tsc --watch",
+    "build:watch": "npm run build -- --watch",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:hybrid": "npm run build && npm run build:esm",
     "lint": "eslint src __tests__",
     "lint:format": "prettier -w src __tests__ && eslint --fix src __tests__",
     "test": "jest",
