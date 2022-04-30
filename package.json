@@ -42,6 +42,7 @@
     "benchmarks": "find benchmarks -maxdepth 1 -name '*.js' -exec benchmarks/start.sh {} \\;"
   },
   "peerDependencies": {
+    "@types/node": "^16",
     "@foxify/http": "^1",
     "prototyped.js": "^2"
   },
@@ -50,6 +51,7 @@
     "fast-json-stringify": "^2.7.13"
   },
   "devDependencies": {
+    "@types/node": "^16.11.32",
     "@foxify/http": "^1.0.0-beta.2",
     "@foxify/inject": "^1.1.0",
     "@types/escape-html": "^1.0.2",
