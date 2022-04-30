@@ -36,8 +36,9 @@
     "build:hybrid": "npm run build && npm run build:esm",
     "lint": "eslint src __tests__",
     "lint:format": "prettier -w src __tests__ && eslint --fix src __tests__",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
+    "test": "node --expose-gc node_modules/jest/bin/jest",
+    "test:coverage": "npm test -- --coverage",
+    "test:ci": "npm run test:coverage -- --ci --runInBand --verbose --logHeapUsage --no-cache",
     "benchmarks": "find benchmarks -maxdepth 1 -name '*.js' -exec benchmarks/start.sh {} \\;"
   },
   "peerDependencies": {
