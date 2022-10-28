@@ -533,7 +533,9 @@ class Router<Request extends RequestT = RequestT,
     response: Response,
   ): void {
     if (response.headersSent) {
-      return request.socket.destroy();
+      request.socket.destroy();
+
+      return;
     }
 
     const stack = error.stack;
