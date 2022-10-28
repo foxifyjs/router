@@ -1,23 +1,19 @@
 {
   "name": "@foxify/router",
   "version": "1.0.0-beta.3",
-  "description": "Foxify Router",
+  "description": "Foxify HTTP Router",
   "homepage": "https://github.com/foxifyjs/router#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/foxifyjs/router.git"
-  },
+  "author": "Ardalan Amini <ardalanamini22@gmail.com> (https://ardalanamini.com/)",
+  "funding": [
+    {
+      "type": "opencollective",
+      "url": "https://opencollective.com/foxify"
+    }
+  ],
+  "license": "MIT",
+  "repository": "github:foxifyjs/router",
   "bugs": {
     "url": "https://github.com/foxifyjs/router/issues"
-  },
-  "funding": {
-    "url": "https://opencollective.com/foxify"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Ardalan Amini",
-    "email": "ardalanamini22@gmail.com",
-    "url": "https://ardalanamini.com"
   },
   "keywords": [
     "foxify",
@@ -27,8 +23,6 @@
     "request",
     "response"
   ],
-  "main": ".build/cjs/index.js",
-  "types": ".build/cjs/index.d.ts",
   "scripts": {
     "build": "tsc",
     "build:watch": "npm run build -- --watch",
@@ -44,6 +38,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=14"
+  },
+  "main": ".build/cjs/index.js",
+  "module": ".build/esm/index.js",
+  "types": ".build/cjs/index.d.ts",
   "peerDependencies": {
     "@foxify/http": "^1",
     "prototyped.js": "^3"
