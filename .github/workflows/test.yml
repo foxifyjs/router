@@ -10,50 +10,45 @@ on:
   workflow_call:
 
 jobs:
-  build:
-
-    timeout-minutes: 15
-
-    runs-on: ${{ matrix.os }}
+  test:
+    name: Test
 
     strategy:
       matrix:
         os:
-          - ubuntu-latest
           - macos-latest
+          - ubuntu-latest
           - windows-latest
         node-version:
           - 14
-          - 15
           - 16
-          - 17
           - 18
 
-    env:
-      OS: ${{ matrix.os }}
-      NODE_VERSION: ${{ matrix.node-version }}
-      REF: ${{ github.ref_name }}
+    runs-on: ${{ matrix.os }}
+
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Cache
+      - name: Setup up node modules cache
+        id: node-modules-cache
         uses: actions/cache@v3
         with:
           path: '**/node_modules'
-          key: node-modules-${{ matrix.os }}-${{ github.ref_name }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            node-modules-${{ matrix.os }}-${{ github.ref_name }}-${{ matrix.node-version }}
-            node-modules-${{ matrix.os }}-main-${{ matrix.node-version }}
-            node-modules-${{ matrix.os }}-${{ github.ref_name }}-
-            node-modules-${{ matrix.os }}-main-
+            node-modules-cache-${{ runner.os }}-${{ runner.arch }}-${{ matrix.node-version }}-
+            node-modules-cache-${{ runner.os }}-${{ runner.arch }}-
+          key: node-modules-cache-${{ runner.os }}-${{ runner.arch }}-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
+          cache: npm
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
+        if: ${{ steps.node-modules-cache.outputs.cache-hit != 'true' }}
         run: npm i --no-fund
 
       - name: Check code styles
@@ -65,12 +60,36 @@ jobs:
       - name: Build ECMAScript
         run: npm run build:esm
 
+      - name: Get number of CPU cores
+        id: cpu-cores
+        uses: SimenB/github-actions-cpu-cores@v1
+
       - name: Test the project
-        run: npm run test:ci
+        run: npm run test:ci -- --maxWorkers ${{ steps.cpu-cores.outputs.count }}
 
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v3
         if: ${{ github.event_name != 'schedule'}}
+        env:
+          OS: ${{ runner.os }}
+          ARCH: ${{ runner.arch }}
+          NODE_VERSION: ${{ matrix.node-version }}
+          REF: ${{ github.ref_name }}
         with:
-          env_vars: OS,NODE_VERSION,REF
+          env_vars: OS,ARCH,NODE_VERSION,REF
           fail_ci_if_error: true
+
+  test-summary:
+    name: Test Summary
+
+    needs:
+      - test
+
+    if: ${{ always() }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check test matrix status
+        if  : ${{ needs.test.result != 'success' }}
+        run : exit 1
