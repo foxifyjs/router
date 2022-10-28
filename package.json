@@ -41,6 +41,9 @@
     "test:ci": "npm run test:coverage -- --ci --verbose --no-cache",
     "benchmarks": "find benchmarks -maxdepth 1 -name '*.js' -exec benchmarks/start.sh {} \\;"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@foxify/http": "^1",
     "prototyped.js": "^3"
