@@ -12,7 +12,7 @@ import {
 import assert from "assert";
 import escapeHtml from "escape-html";
 import { STATUS_CODES } from "http";
-import { compact, deepFlatten } from "prototyped.js/dist/array";
+import { array } from "prototyped.js";
 import {
   EMPTY_RESULT,
   ErrorHandlersT,
@@ -39,6 +39,8 @@ import {
   prettyPrint,
   routes,
 } from "./utils";
+
+const { compact, deepFlatten } = array;
 
 interface Router<Request extends RequestT = RequestT,
   Response extends ResponseT = ResponseT> {
@@ -533,7 +535,7 @@ class Router<Request extends RequestT = RequestT,
     response: Response,
   ): void {
     if (response.headersSent) {
-      return request.socket.destroy();
+      return void request.socket.destroy();
     }
 
     const stack = error.stack;

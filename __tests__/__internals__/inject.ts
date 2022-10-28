@@ -22,6 +22,6 @@ export default function inject(
 
       return router.lookup(req, res);
     },
-    { ...options, Request, Response },
+    { ...options, Request, Response: Response as never }, // TODO: Fix type issue
   );
 }
